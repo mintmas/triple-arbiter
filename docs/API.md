@@ -200,6 +200,53 @@ Sells 100 USDC → WETH on Base. Response includes a transaction whose calldata 
 
 Returns a self-contained HTML page embedding the official `@0x/swap-ui` widget, pre-configured with the facilitator's collector + 50 bps fee. Drop-in for anyone needing a hosted swap UI without running their own 0x integration.
 
+## Relay Cross-Chain Intent Proxy
+
+### GET `/relay/quote`
+
+Proxy to Relay.link cross-chain intent router. Injects `appFees: [{recipient: <collector>, fee: "30"}]` on every quote — 30 bps of input amount flows to the facilitator collector on settlement. Callers do NOT need their own Relay integration.
+
+**Query parameters:**
+
+| Param | Default | Notes |
+|---|---|---|
+| `originChainId` | `8453` (Base) | Source chain for input currency |
+| `destinationChainId` | `8453` | Destination chain for output currency |
+| `originCurrency` | USDC Base | Input token address |
+| `destinationCurrency` | WETH Base | Output token address |
+| `amount` | — required | Input amount in base units |
+| `user` | collector | Address signing the intent (defaults safe for dry-run) |
+| `recipient` | user | Address receiving output |
+| `tradeType` | `EXACT_INPUT` | `EXACT_INPUT` or `EXACT_OUTPUT` |
+
+**Response:** Relay v1 quote pass-through with `appFees` entry in `details`. Claim via relay.link/claim-app-fees with collector wallet.
+
+## KyberSwap Aggregator Proxy
+
+### GET `/kyber/quote`
+
+Proxy to KyberSwap aggregator (14+ chains). Injects `extraFee` with `feeReceiver=<collector>`, `isInBps=true`, `feeAmount=30` → 30 bps auto-collected at swap execution. No registration required.
+
+**Query parameters:**
+
+| Param | Default | Notes |
+|---|---|---|
+| `chainId` | `8453` | ethereum/base/arbitrum/optimism/polygon/bsc/avalanche/gnosis |
+| `tokenIn` | USDC Base | Input token address |
+| `tokenOut` | WETH Base | Output token address |
+| `amountIn` | — required | Input amount in base units |
+| `saveGas` | `false` | If true, prefer gas-efficient routes |
+
+**Response:** KyberSwap `/api/v1/routes` pass-through with `extraFee` populated in `routeSummary`. Caller submits encoded calldata to KyberSwap router to execute.
+
+## Mayan Finance Cross-Chain Proxy
+
+### POST `/mayan/quote`
+
+Cross-chain (Ethereum/Arbitrum/Optimism/Polygon/BSC/Avalanche → Base) quote via Mayan Swift v3. Injects `referrer=<SOL_collector>` + `referrerBps=25` on every quote. 25 bps of routed amount flows to Solana collector wallet.
+
+See [INTEGRATION.md](INTEGRATION.md) for full Mayan payload schema — this endpoint pre-dates the swap-proxy pattern.
+
 ## Error format
 
 All errors return FastAPI-standard:

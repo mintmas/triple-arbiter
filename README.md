@@ -37,6 +37,29 @@ Use cases:
 
 **Endpoint:** `https://mardi-worldwide-sacred-model.trycloudflare.com/zerox/quote`
 
+### 4. Relay Cross-Chain Intent Proxy
+
+`GET /relay/quote` — proxy to Relay (relay.link) cross-chain intent router with 30 bps `appFees` baked in. Relay handles cross-chain + cross-currency atomic settlement in a single user-signed intent. Agents get monetized quote without a Relay account or claim workflow — fees auto-flow to the facilitator collector.
+
+Use cases:
+- Cross-chain USDC arbitrage / bridging for agents
+- Agent wallets bootstrapping balance on new chains
+- Cross-currency settlement (e.g., pay in USDT on BSC, settle in USDC on Base)
+
+**Endpoint:** `https://mardi-worldwide-sacred-model.trycloudflare.com/relay/quote`
+
+### 5. KyberSwap Aggregator Proxy
+
+`GET /kyber/quote` — proxy to KyberSwap aggregator with 30 bps `extraFee` (`feeReceiver=<collector>`, `isInBps=true`) on 14+ chains. Provides redundant swap routing alongside the 0x proxy — for cases where one aggregator lacks a pool or prices the other beats.
+
+**Endpoint:** `https://mardi-worldwide-sacred-model.trycloudflare.com/kyber/quote`
+
+### 6. Mayan Finance Cross-Chain Proxy
+
+`POST /mayan/quote` — proxy to Mayan Swift v3 price API for cross-chain settlements Ethereum/Arbitrum/Optimism/Polygon/BSC/Avalanche → Base. Includes 25 bps referrer flowing to the facilitator's Solana collector (auto-converted from EVM at Mayan settlement layer).
+
+**Endpoint:** `https://mardi-worldwide-sacred-model.trycloudflare.com/mayan/quote`
+
 ## Agent discovery
 
 All standard manifests are published:
