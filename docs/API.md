@@ -159,6 +159,47 @@ Issue signed attestation. Requires `x-facilitator-settled: <tx_hash>` header.
 }
 ```
 
+## 0x Swap Monetized-Quote Proxy
+
+### GET `/zerox/quote`
+
+Server-side proxy to `api.0x.org/swap/permit2/{price,quote}` (v2). Injects a 50 bps integrator fee payable to the facilitator collector (`0x5f9B8f3BD13e5320eF5EFAEa906442Fb9B64802c`). Callers do **not** need their own 0x API key — the facilitator forwards on Standard-tier credentials with `tier=standard` + `swapFeeBps` + `swapFeeRecipient` + `swapFeeToken` pre-filled.
+
+**Query parameters:**
+
+| Param | Default | Notes |
+|---|---|---|
+| `chainId` | `8453` (Base) | Any chain 0x v2 supports (1, 10, 137, 42161, 43114, 56, 8453, …) |
+| `sellToken` | USDC Base | ERC20 address |
+| `buyToken` | WETH Base | ERC20 address |
+| `sellAmount` | — | Base units (e.g. `1000000` = 1 USDC on 6-decimal token). One of `sellAmount` / `buyAmount` required. |
+| `buyAmount` | — | Base units. |
+| `taker` | collector | Address that will sign the permit + execute the swap. Default is safe for dry-run simulation. |
+| `slippageBps` | `100` | 1 % default; override with e.g. `50` for 0.5 %. |
+| `priceOnly` | `false` | If `true`, hits `/price` (no permit / transaction data) — use for pricing rails without intent to settle. |
+
+**Response:** raw 0x v2 response pass-through. The response shape matches [0x Swap v2 docs](https://0x.org/docs/0x-swap-api/introduction). Key fields:
+
+- `buyAmount`, `minBuyAmount` — target output (base units)
+- `fees.integratorFee` — our 50 bps fee (`{amount, token, type: "volume"}`)
+- `fees.zeroExFee` — 0x's own 15 bps (not ours)
+- `route.fills` — liquidity sources (e.g. Uniswap_V4, Aerodrome_V2, TraderJoe_V2.2)
+- `transaction` — `{to, data, gas, gasPrice, value}` ready to sign/broadcast (full quote only)
+- `permit2` — EIP-712 typed data for Permit2 signing (full quote only)
+
+**Example:**
+```bash
+curl -s 'https://mardi-worldwide-sacred-model.trycloudflare.com/zerox/quote?sellAmount=100000000'
+```
+
+Sells 100 USDC → WETH on Base. Response includes a transaction whose calldata transfers exactly `500000` atoms (0.5 USDC = 50 bps) to the collector as part of the same atomic swap.
+
+**Monetization model:** 0x v2 splits monetization natively — `integratorFee` is collected on top of the swap route via the Permit2 AllowanceHolder flow; the taker signs a single Permit2 authorization and the AllowanceHolder contract atomically forwards our fee before executing the swap. No separate transaction or approval required.
+
+### GET `/swap`
+
+Returns a self-contained HTML page embedding the official `@0x/swap-ui` widget, pre-configured with the facilitator's collector + 50 bps fee. Drop-in for anyone needing a hosted swap UI without running their own 0x integration.
+
 ## Error format
 
 All errors return FastAPI-standard:

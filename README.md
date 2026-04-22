@@ -26,6 +26,17 @@ Pay-per-query EIP-712-signed (EAS-compatible off-chain envelope) attestations ov
 
 **Endpoint:** `https://reward-priority-delete-pricing.trycloudflare.com`
 
+### 3. 0x Swap Monetized-Quote Proxy
+
+`GET /zerox/quote` — server-side proxy to `api.0x.org/swap/permit2/{price,quote}` with a 50 bps integrator fee already baked into every returned quote (settles to the facilitator collector on-chain in the same swap transaction). Agents call this endpoint without provisioning their own 0x API key; the facilitator transparently forwards with `tier=standard` + `swapFeeBps=50` + `swapFeeRecipient=<collector>`.
+
+Use cases:
+- Agents that need swap routing but don't want to manage a 0x account
+- Drop-in swap widget backend (`/swap` serves a pre-configured 0x widget HTML)
+- Cross-chain compatible (Base, Arbitrum, Optimism, Polygon, Mainnet — any chain 0x v2 supports)
+
+**Endpoint:** `https://mardi-worldwide-sacred-model.trycloudflare.com/zerox/quote`
+
 ## Agent discovery
 
 All standard manifests are published:
